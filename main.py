@@ -54,13 +54,24 @@ def enhanced_inception(input_data, max_kernel_size, dimensions_of_convolution):
     # Explanation:
     #
     # Tensor height/width after convolution = (height/width before - kernel height/width)/ stride + 1
-    # more concisely H/W_out = (H/W_in _ H/W_kernel)/s +1
-    # at 
-
+    # more concisely H/W_out = (H/W_in - H/W_kernel)/s +1
+    # at H/W_kernel = 2, s = 1
+    #
+    # H/W_out = ((H/W_in - 2)/ 1 + 1
+    #
+    # H/W_out = H/W_in - 1
+    #
+    # Therefore, to do a 7x7 convolution, where a 7x7 partition of the tensor is reduced
+    # to a single 1x1 square, requires 6 2x2 convolutions, and a 5x5 requires 4,
+    # a 3x3 requires 2.
+    #
+    # and a result, it is self-evident from the general pattern beforehand established,
+    # that a convolution of Kernel size K, requires K-1 (2x2) convolutions.
+    # ( or 1x2 or 2x2x2 for one-dimensional and three-dimensional convolutions.
 
     for i in range(max_kernel_size - 1):
         convolution_output = convolution(convolution_input)
         torch.cat((collective_data, convolution_output), 2)
         convolution_input = convolution_output
 
-    return
+    return collective_data
