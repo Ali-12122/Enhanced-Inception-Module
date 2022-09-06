@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class EnhancedInceptionModule(nn.Module):
-    def __init__(self, input_data, number_of_convolution_filters):
+    def __init__(self, input_data_depth, number_of_convolution_filters=32, max_kernel_size=7, dimensions_of_convolution=2):
         super().__init__()
         # The Member values are functions used in the inception, the convolution, max pool, and 1x1 convolution
         # each made with three versions to handle one, two, and three dimensional data,
@@ -19,11 +19,11 @@ class EnhancedInceptionModule(nn.Module):
 
         # 1x1 Convolution layers,
 
-        self.convolution_1d_1x1 = nn.Conv1d(in_channels=input_data.size(dim=2),
+        self.convolution_1d_1x1 = nn.Conv1d(in_channels=input_data_depth,
                                             out_channels=number_of_convolution_filters, kernel_size=(1,))
-        self.convolution_2d_1x1 = nn.Conv2d(in_channels=input_data.size(dim=2),
+        self.convolution_2d_1x1 = nn.Conv2d(in_channels=input_data_depth,
                                             out_channels=number_of_convolution_filters, kernel_size=(1,))
-        self.convolution_3d_1x1 = nn.Conv3d(in_channels=input_data.size(dim=2),
+        self.convolution_3d_1x1 = nn.Conv3d(in_channels=input_data_depth,
                                             out_channels=number_of_convolution_filters, kernel_size=(1,))
 
         # Max pooling layers,
@@ -32,23 +32,26 @@ class EnhancedInceptionModule(nn.Module):
         self.max_pool_2d = nn.MaxPool2d(kernel_size=2, stride=2)
         self.max_pool_3d = nn.MaxPool3d(kernel_size=2, stride=2)
 
-    def forward(self, input_data, max_kernel_size, dimensions_of_convolution):
+        self.max_kernel_size = max_kernel_size
+        self.dimensions_of_convolution = dimensions_of_convolution
+
+    def forward(self, input_data):
 
         convolution = self.convolution_2d
         max_pool = self.max_pool_2d
         convolution_1x1 = self.convolution_2d_1x1
 
-        if dimensions_of_convolution == 1:
+        if self.dimensions_of_convolution == 1:
             convolution = self.convolution_1d
             max_pool = self.max_pool_1d
             convolution_1x1 = self.convolution_1d_1x1
 
-        elif dimensions_of_convolution == 2:
+        elif self.dimensions_of_convolution == 2:
             convolution = self.convolution_2d
             max_pool = self.max_pool_2d
             convolution_1x1 = self.convolution_2d_1x1
 
-        elif dimensions_of_convolution == 3:
+        elif self.dimensions_of_convolution == 3:
             convolution = self.convolution_3d
             max_pool = self.max_pool_3d
             convolution_1x1 = self.convolution_3d_1x1
@@ -90,7 +93,7 @@ class EnhancedInceptionModule(nn.Module):
         # that a convolution of Kernel size K, requires K-1 (2x2) convolutions.
         # ( or 1x2 or 2x2x2 for one-dimensional and three-dimensional convolutions.
 
-        for i in range(max_kernel_size - 1):
+        for i in range(self.max_kernel_size - 1):
             convolution_output = convolution(convolution_input)
             torch.cat((collective_data, convolution_output), 2)
             convolution_input = convolution_output
