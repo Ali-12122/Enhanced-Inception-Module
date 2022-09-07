@@ -11,26 +11,26 @@ class EnhancedInceptionModule(nn.Module):
         # Convolution layers,
 
         self.convolution_1d = nn.Conv1d(in_channels=number_of_convolution_filters,
-                                        out_channels=number_of_convolution_filters, kernel_size=(2,))
+                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same')
         self.convolution_2d = nn.Conv2d(in_channels=number_of_convolution_filters,
-                                        out_channels=number_of_convolution_filters, kernel_size=(2,))
+                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same')
         self.convolution_3d = nn.Conv3d(in_channels=number_of_convolution_filters,
-                                        out_channels=number_of_convolution_filters, kernel_size=(2,))
+                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same')
 
         # 1x1 Convolution layers,
 
         self.convolution_1d_1x1 = nn.Conv1d(in_channels=input_data_depth,
-                                            out_channels=number_of_convolution_filters, kernel_size=(1,))
+                                            out_channels=number_of_convolution_filters, kernel_size=1)
         self.convolution_2d_1x1 = nn.Conv2d(in_channels=input_data_depth,
-                                            out_channels=number_of_convolution_filters, kernel_size=(1,))
+                                            out_channels=number_of_convolution_filters, kernel_size=1)
         self.convolution_3d_1x1 = nn.Conv3d(in_channels=input_data_depth,
-                                            out_channels=number_of_convolution_filters, kernel_size=(1,))
+                                            out_channels=number_of_convolution_filters, kernel_size=1)
 
         # Max pooling layers,
 
-        self.max_pool_1d = nn.MaxPool1d(kernel_size=2, stride=2)
-        self.max_pool_2d = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.max_pool_3d = nn.MaxPool3d(kernel_size=2, stride=2)
+        self.max_pool_1d = nn.MaxPool1d(kernel_size=3, stride=1, padding=1)
+        self.max_pool_2d = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+        self.max_pool_3d = nn.MaxPool3d(kernel_size=3, stride=1, padding=1)
 
         self.max_kernel_size = max_kernel_size
         self.dimensions_of_convolution = dimensions_of_convolution
@@ -72,7 +72,7 @@ class EnhancedInceptionModule(nn.Module):
 
         max_pool_output = max_pool(input_data)
         convolution_1x1_output = convolution_1x1(max_pool_output)
-        torch.cat((collective_data, convolution_1x1_output), 2)
+        torch.cat((collective_data, convolution_1x1_output), 0)
 
         # Iterating the convolution operation over the data (max_kernel_size - 1) times,
         # Explanation:
@@ -95,7 +95,7 @@ class EnhancedInceptionModule(nn.Module):
 
         for i in range(self.max_kernel_size - 1):
             convolution_output = convolution(convolution_input)
-            torch.cat((collective_data, convolution_output), 2)
+            collective_data = torch.cat((collective_data, convolution_output), 0)
             convolution_input = convolution_output
 
         return collective_data
