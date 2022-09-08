@@ -3,28 +3,35 @@ import torch.nn as nn
 
 
 class EnhancedInceptionModule(nn.Module):
-    def __init__(self, input_data_depth, number_of_convolution_filters=32, max_kernel_size=7, dimensions_of_convolution=2):
+    def __init__(self, input_data_depth, output_data_depth, number_of_convolution_filters=32, max_kernel_size=7,
+                 dimensions_of_convolution=2):
         super().__init__()
         # The Member values are functions used in the inception, the convolution, max pool, and 1x1 convolution
         # each made with three versions to handle one, two, and three dimensional data,
 
+        self.input_data_depth = input_data_depth
+        self.output_data_depth = output_data_depth
+
         # Convolution layers,
 
         self.convolution_1d = nn.Conv1d(in_channels=number_of_convolution_filters,
-                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same')
+                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same',
+                                        bias=False)
         self.convolution_2d = nn.Conv2d(in_channels=number_of_convolution_filters,
-                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same')
+                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same',
+                                        bias=False)
         self.convolution_3d = nn.Conv3d(in_channels=number_of_convolution_filters,
-                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same')
+                                        out_channels=number_of_convolution_filters, kernel_size=2, padding='same',
+                                        bias=False)
 
         # 1x1 Convolution layers,
 
         self.convolution_1d_1x1 = nn.Conv1d(in_channels=input_data_depth,
-                                            out_channels=number_of_convolution_filters, kernel_size=1)
+                                            out_channels=number_of_convolution_filters, kernel_size=1, bias=False)
         self.convolution_2d_1x1 = nn.Conv2d(in_channels=input_data_depth,
-                                            out_channels=number_of_convolution_filters, kernel_size=1)
+                                            out_channels=number_of_convolution_filters, kernel_size=1, bias=False)
         self.convolution_3d_1x1 = nn.Conv3d(in_channels=input_data_depth,
-                                            out_channels=number_of_convolution_filters, kernel_size=1)
+                                            out_channels=number_of_convolution_filters, kernel_size=1, bias=False)
 
         # Max pooling layers,
 
@@ -98,4 +105,20 @@ class EnhancedInceptionModule(nn.Module):
             collective_data = torch.cat((collective_data, convolution_output), 0)
             convolution_input = convolution_output
 
-        return collective_data
+        # Applying 1x1 convolution to change the depth of the collective_data as to match the
+        # desired output depth.
+
+        if self.dimensions_of_convolution == 1:
+            output_1x1_convolution = nn.Conv1d(in_channels=collective_data.size(dim=0),
+                                               out_channels=self.output_data_depth, kernel_size=1)
+            return output_1x1_convolution(collective_data)
+
+        elif self.dimensions_of_convolution == 2:
+            output_1x1_convolution = nn.Conv2d(in_channels=collective_data.size(dim=0),
+                                               out_channels=self.output_data_depth, kernel_size=1)
+            return output_1x1_convolution(collective_data)
+
+        else:
+            output_1x1_convolution = nn.Conv3d(in_channels=collective_data.size(dim=0),
+                                               out_channels=self.output_data_depth, kernel_size=1)
+            return output_1x1_convolution(collective_data)
